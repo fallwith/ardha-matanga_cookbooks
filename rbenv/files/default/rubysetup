@@ -1,0 +1,46 @@
+#!/bin/sh
+owd=$PWD                 # caller will be returned to their original pwd
+project_root=$1          # call this script with the path to a dir containing a .ruby-version file
+: ${project_root:=$owd}  # call the script without arguments if .ruby-version is at $PWD
+
+if [ ! -d "$project_root" ]; then
+  echo "Error: $project_root is not a directory."
+  exit 2
+fi
+
+if [ ! -e "$project_root/.ruby-version" ]; then
+  echo "Error: $project_root does not contain a .ruby-version file."
+  exit 2
+fi
+
+ruby_version="$(cat "$project_root/.ruby-version")"
+echo "Checking for rbenv instance of Ruby $ruby_version..."
+if ! $(rbenv versions 2>&1 | grep -v "not installed" | grep -q "$ruby_version"); then
+  echo "Missing. Installing..."
+  rbenv install "$ruby_version"
+  rbenv rehash
+  gem install bundler --no-rdoc --no-ri
+  rbenv rehash
+fi
+
+if [ -e "$project_root/Gemfile" ]; then
+  echo "Bundling gems..."
+  cd "$project_root"
+  buncmd="bundle install"
+  # if the project already specifies a binstubs path, don't mess with the existing config
+  if [ -e "$project_root/.bundle/config" ]; then
+    if [ ! $(cat "$project_root/.bundle/config" | grep -q BUNDLE_BIN) ]; then
+      buncmd="$buncmd --binstubs=\"$project_root/.binstubs\""
+    fi
+  fi
+  # if there are local gems available, use them
+  if [ -e "$project_root/vendor/cache" ]; then
+    buncmd="$buncmd --local"
+  fi
+  # run bundle install and make Bundler's output more terse
+  buncmd="$buncmd| grep -viE 'using|complete|cache' | sed '/^$/d'"
+  eval "$buncmd"
+fi
+
+echo "Setup complete."
+cd "$owd"
