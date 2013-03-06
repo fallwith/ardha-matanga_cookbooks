@@ -22,7 +22,7 @@ end
 package "build-essential"
 package "libxml2"
 package "libxml2-dev"
-package "libxslt-dev"
+package "libxslt1-dev"
 package "imagemagick"
 package "libmagickcore-dev"
 package "libmagickwand-dev"
