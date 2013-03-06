@@ -15,8 +15,8 @@ template root_profile do
   not_if "test -e #{root_profile_backup}"
 end 
 
-bash "run 'sudo apt-get update'" do
-  code "sudo apt-get update"
+bash "run 'apt-get update'" do
+  code "apt-get update"
 end
 
 package "build-essential"
